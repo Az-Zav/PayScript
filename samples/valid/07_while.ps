@@ -1,0 +1,25 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+
+EMPLOYEE john
+    name "John Garcia"
+    salary 28000
+END
+
+EMPLOYEE ana
+    name "Ana Reyes"
+    salary 30000
+END
+
+SET i TO 1
+SET total TO 0
+WHILE i <= LENGTH(employees)
+    SET total TO total + employees[i].net
+    SET i TO i + 1
+END
+
+PRINT "Total payroll:", total
+
+// expect-out: Total payroll: 58000.00

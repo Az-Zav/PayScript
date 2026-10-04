@@ -1,0 +1,39 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+
+EMPLOYEE maria
+    name "Maria Santos"
+    salary 22000
+    absences 2
+    late_minutes 30
+    overtime_hours 5
+END
+
+SET extra TO INPUT("Bonus for " + maria.name + ": ")
+
+ADD maria "Overtime" maria.overtime_hours * maria.hourly_rate * 1.25
+ADD maria "Bonus" extra
+EXEMPT maria "Meal Allowance" 1000
+CONTRIBUTE maria "SSS" 900
+LESS maria "Uniform" 300
+
+PRINT maria.name, maria.gross, maria.net
+PAYSLIP maria
+
+// input: 500
+// expect-out: Bonus for Maria Santos: Maria Santos 22218.75 21018.75
+// expect-payslip maria:
+//   Maria Santos
+//   Basic Pay            22000.00
+//   Absences              2000.00
+//   Tardiness               62.50
+//   Overtime               781.25
+//   Bonus                  500.00
+//   Meal Allowance        1000.00
+//   SSS                    900.00
+//   Withholding Tax          0.00
+//   Uniform                300.00
+//   Gross                22218.75
+//   Net Pay              21018.75

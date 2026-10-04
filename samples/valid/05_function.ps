@@ -1,0 +1,22 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+
+FUNCTION perfect_bonus(absences, late)
+    SET amount TO 0
+    IF absences = 0 AND late = 0 THEN
+        SET amount TO 500
+    END
+    RETURN amount
+END
+
+EMPLOYEE ana
+    name "Ana Reyes"
+    salary 30000
+END
+
+ADD ana "Perfect Attendance Bonus" perfect_bonus(ana.absences, ana.late_minutes)
+PRINT ana.name, ana.net
+
+// expect-out: Ana Reyes 30500.00

@@ -1,0 +1,20 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+
+EMPLOYEE carlo
+    name "Carlo Cruz"
+    salary 28000
+    position "Supervisor"
+END
+
+IF carlo.position = "Supervisor" THEN
+    ADD carlo "Supervisory Allowance" 2000
+ELSE
+    EXEMPT carlo "Meal Allowance" 1000
+END
+
+PRINT carlo.name, carlo.net
+
+// expect-out: Carlo Cruz 30000.00

@@ -1,0 +1,47 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+
+EMPLOYEE john
+    name "John Garcia"
+    salary 28000
+    position "Supervisor"
+END
+
+EMPLOYEE ana
+    name "Ana Reyes"
+    salary 30000
+    position "Staff"
+END
+
+SET perks TO [500, 300, 200]
+SET total_perks TO 0
+FOR EACH p IN perks
+    SET total_perks TO total_perks + p
+END
+
+FOR EACH e IN employees
+    EXEMPT e "De Minimis Benefits" total_perks
+    CONTRIBUTE e "SSS" 1350
+    PAYSLIP e
+END
+
+// expect-payslip john:
+//   John Garcia
+//   Supervisor
+//   Basic Pay            28000.00
+//   De Minimis Benefits   1000.00
+//   SSS                   1350.00
+//   Withholding Tax          0.00
+//   Gross                29000.00
+//   Net Pay              27650.00
+// expect-payslip ana:
+//   Ana Reyes
+//   Staff
+//   Basic Pay            30000.00
+//   De Minimis Benefits   1000.00
+//   SSS                   1350.00
+//   Withholding Tax          0.00
+//   Gross                31000.00
+//   Net Pay              29650.00
