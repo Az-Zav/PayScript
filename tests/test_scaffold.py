@@ -4,7 +4,7 @@ import unittest
 
 from payscript import __version__
 from payscript.errors import PayScriptError
-from payscript.tokens import Token, TokenType
+from payscript.tokens import Token, T
 
 
 class ScaffoldTests(unittest.TestCase):
@@ -12,7 +12,7 @@ class ScaffoldTests(unittest.TestCase):
         self.assertEqual(__version__, "0.1.0")
 
     def test_token_can_be_constructed(self) -> None:
-        token = Token(TokenType.IDENTIFIER, "employee", 1, 1)
+        token = Token(T.IDENT, "employee", 1, 1)
         self.assertEqual(token.value, "employee")
 
     def test_error_is_exception(self) -> None:
