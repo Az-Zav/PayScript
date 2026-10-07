@@ -125,4 +125,4 @@ class Lexer:
 
         self.add_token(type_, text, line, col)
 
-    
+

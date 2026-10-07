@@ -1,33 +1,24 @@
-"""Command-line interface for PayScript."""
-
-import argparse
+from payscript.lexer import Lexer
 from pathlib import Path
 
-from payscript.errors import PayScriptError
+def main():
+    sample_dir = Path(__file__).parent.parent / "samples" / "invalid"
 
+    if not sample_dir.exists():
+        print(f"Sample directory not found: {sample_dir}")
+        return
 
-def _run_file(filename: str) -> None:
-    path = Path(filename)
-    if not path.is_file():
-        raise PayScriptError(f"PayScript file not found: {path}")
-    raise PayScriptError("PayScript execution is not implemented yet.")
+    for sample_file in sorted(sample_dir.glob("*.ps")):
+        print(f"\n--- Tokenizing {sample_file.name} ---")
+        try:
+            source = sample_file.read_text()
+            lexer = Lexer(source)
+            tokens = lexer.tokenize()
 
-
-def main() -> int:
-    """Run the PayScript command-line interface."""
-    parser = argparse.ArgumentParser(prog="payscript")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    run_parser = subparsers.add_parser("run", help="run a PayScript source file")
-    run_parser.add_argument("filename", help="path to a .ps source file")
-    args = parser.parse_args()
-
-    try:
-        if args.command == "run":
-            _run_file(args.filename)
-    except PayScriptError as error:
-        parser.exit(1, f"payscript: error: {error}\n")
-    return 0
-
+            for token in tokens:
+                print(f"  {token.type.name:15} {token.value!r:20} Line {token.line} Col {token.col}")
+        except Exception as e:
+            print(f"  Error: {e}")
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
