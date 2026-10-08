@@ -1,0 +1,12 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+EMPLOYEE maria
+    name "Maria Santos"
+    salary 22000
+END
+ADD maria "Bonus" 500
+ADD maria "Bonus" 300
+
+// expect-error: Line 10, col 11: Duplicate label "Bonus" for employee maria

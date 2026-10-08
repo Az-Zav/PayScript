@@ -6,6 +6,8 @@ EMPLOYEE maria
     name "Maria Santos"
     salary 22000
 END
-PRINT x
+FUNCTION bonus(x)
+    SET y TO x
+END
 
-// expect-error: Line 9, col 7: NAME: Name 'x' must be declared before use.
+// expect-error: Line 9, col 1: FUNCTION 'bonus': RETURN is required.

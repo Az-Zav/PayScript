@@ -1,0 +1,13 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+EMPLOYEE maria
+    name "Maria Santos"
+    salary 22000
+END
+FOR EACH i IN 3 -> 1
+    PRINT i
+END
+
+// expect-error: Line 9, col 1: FOR: Range start must not be greater than end.

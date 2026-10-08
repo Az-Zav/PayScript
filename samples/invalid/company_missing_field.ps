@@ -1,11 +1,9 @@
 COMPANY
     working_days 22
-    hours_per_day 8
 END
 EMPLOYEE maria
     name "Maria Santos"
     salary 22000
 END
-PRINT 1 / 0
 
-// expect-error: Line 9, col 7: Division by zero
+// expect-error: Line 1, col 1: COMPANY: Missing required field 'hours_per_day'.

@@ -1,0 +1,11 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+EMPLOYEE maria
+    name "Maria Santos"
+    salary 22000
+END
+ADD maria "Basic Pay" 500
+
+// expect-error: Line 9, col 11: LABEL: 'Basic Pay' is reserved for automatic payslip entries.

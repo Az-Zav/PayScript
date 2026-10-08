@@ -6,6 +6,6 @@ EMPLOYEE maria
     name "Maria Santos"
     salary 22000
 END
-PRINT x
+SET employees TO 1
 
-// expect-error: Line 9, col 7: NAME: Name 'x' must be declared before use.
+// expect-error: Line 9, col 5: NAME: Cannot redefine reserved name 'employees'.

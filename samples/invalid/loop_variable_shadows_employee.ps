@@ -1,0 +1,13 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+EMPLOYEE maria
+    name "Maria Santos"
+    salary 22000
+END
+FOR EACH maria IN 1 -> 3
+    PRINT maria
+END
+
+// expect-error: Line 9, col 10: FOR: Loop variable 'maria' cannot reuse an employee handle.
