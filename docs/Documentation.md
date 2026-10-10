@@ -99,4 +99,8 @@ KEYWORDS         = COMPANY EMPLOYEE END TAX BELOW ABOVE
 (* Pay targets: a declared handle or a FOR EACH loop variable         *)
 (* Duplicate labels: caught at run time, so IF branches may repeat    *)
 (* Functions: no pay commands inside; RETURN is required              *)
+(* Function scope: sees its parameters, its own locals, employee      *)
+(*   handles, and the built-ins employees and company (company only   *)
+(*   if COMPANY came before the function). Global variables are not   *)
+(*   visible inside a function.                                       *)
 (* Types: text + text joins; text + number is an error; divide by 0 is an error *)

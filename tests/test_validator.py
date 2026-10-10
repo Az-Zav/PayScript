@@ -231,6 +231,20 @@ def test_pay_commands_not_allowed_inside_function():
             "not allowed inside a function")
 
 
+def test_function_can_read_company_and_employees():
+    check(BASE + "FUNCTION f()\n RETURN company.working_days\nEND")
+    check(BASE + "FUNCTION n()\n RETURN LENGTH(employees)\nEND")
+
+
+def test_function_cannot_read_global_variables():
+    rejects(BASE + "SET x TO 5\nFUNCTION f()\n RETURN x\nEND", "must be declared")
+
+
+def test_function_cannot_read_company_before_it_is_declared():
+    rejects(MARIA + "FUNCTION f()\n RETURN company.working_days\nEND\n" + COMPANY,
+            "must be declared")
+
+
 def test_duplicate_parameter():
     rejects(BASE + "FUNCTION f(a, a)\n RETURN a\nEND", "Duplicate parameter")
 

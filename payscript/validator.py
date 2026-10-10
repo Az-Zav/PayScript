@@ -296,9 +296,11 @@ def _check_tax_table(statement, scope, labels) -> None:
 def _check_function(statement, scope, labels) -> None:
     """FUNCTION: checks the body in its own scope, then registers the name.
 
-    A function sees only its parameters, its own locals and employee handles.
-    The name is registered *after* the body, so recursion and calls to
-    functions declared later are rejected.
+    A function sees only its parameters, its own locals, employee handles and
+    the built-ins ``employees`` and ``company`` (``company`` only once COMPANY
+    has been declared). Other global variables are not visible. The name is
+    registered *after* the body, so recursion and calls to functions declared
+    later are rejected.
     """
     _new_name(statement, statement.name, scope)
 
@@ -308,8 +310,9 @@ def _check_function(statement, scope, labels) -> None:
             _error(parameter, f"FUNCTION: Duplicate parameter '{parameter.name}'.")
         parameters.add(parameter.name)
 
+    builtins = scope.names & {"employees", "company"}
     local = _Scope(
-        names=scope.employees | parameters,
+        names=scope.employees | parameters | builtins,
         functions=scope.functions.copy(),
         employees=scope.employees.copy(),
         in_function=True,
