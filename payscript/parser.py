@@ -31,6 +31,7 @@ from payscript.ast_nodes import (
     UnaryExpr,       # -5, NOT ready
     WhileStmt,       # WHILE ... END
 )
+from payscript.constants import PAY_KINDS as PAY_KIND_NAMES  # "ADD", "EXEMPT", ...
 from payscript.errors import PayScriptError  # the shared error type (message, line, col)
 from payscript.tokens import KEYWORDS, T, Token  # T = list of token types
 
@@ -45,7 +46,7 @@ COMPARISON_OPS = {
 }
 
 # The four pay commands (all parsed by the same method).
-PAY_KINDS = (T.ADD, T.EXEMPT, T.CONTRIBUTE, T.LESS)
+PAY_KINDS = tuple(T[name] for name in PAY_KIND_NAMES)
 
 
 def parse(tokens):

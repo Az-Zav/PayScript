@@ -34,20 +34,12 @@ from payscript.ast_nodes import (
     UnaryExpr,
     WhileStmt,
 )
+from payscript.constants import (
+    COMPANY_REQUIRED, EMPLOYEE_DEFAULTS, EMPLOYEE_NUMBER_FIELDS,
+    EMPLOYEE_REQUIRED, PAY_KINDS, RESERVED_LABELS,
+)
 from payscript.errors import PayScriptError
 
-
-PAY_KINDS = ("ADD", "EXEMPT", "CONTRIBUTE", "LESS")
-RESERVED_LABELS = {"Basic Pay", "Absences", "Tardiness", "Overtime",
-                   "Withholding Tax"}
-
-# Optional employee fields and their defaults.
-EMPLOYEE_DEFAULTS = {
-    "position": "",
-    "absences": 0,
-    "late_minutes": 0,
-    "overtime_hours": 0,
-}
 
 MAX_CALL_DEPTH = 100
 
@@ -350,7 +342,7 @@ class Interpreter:
         if self.company is not None:
             raise PayScriptError("Only one COMPANY block is allowed", stmt.line, stmt.col)
         fields = {entry.name: normalize(entry.value.value) for entry in stmt.fields}
-        for required in ("working_days", "hours_per_day"):
+        for required in COMPANY_REQUIRED:
             if required not in fields:
                 raise PayScriptError(f"COMPANY is missing required field {required}", stmt.line, stmt.col)
         self.company = Company(fields)
@@ -359,13 +351,13 @@ class Interpreter:
         if stmt.handle in self.employees:
             raise PayScriptError(f"EMPLOYEE {stmt.handle} is already declared", stmt.line, stmt.col)
         fields = {entry.name: normalize(entry.value.value) for entry in stmt.fields}
-        for required in ("name", "salary"):
+        for required in EMPLOYEE_REQUIRED:
             if required not in fields:
                 raise PayScriptError(
                     f"EMPLOYEE {stmt.handle} is missing required field {required}",
                     stmt.line, stmt.col,
                 )
-        for numeric in ("salary", "absences", "late_minutes", "overtime_hours"):
+        for numeric in EMPLOYEE_NUMBER_FIELDS:
             if numeric in fields and not is_number(fields[numeric]):
                 entry = next(e for e in stmt.fields if e.name == numeric)
                 raise PayScriptError(f"Field {numeric} must be a number", entry.line, entry.col)

@@ -41,25 +41,14 @@ from payscript.ast_nodes import (
     PayStmt, PayslipStmt, PrintStmt, Program, ReturnStmt, SetStmt, TaxTable,
     UnaryExpr, WhileStmt,
 )
+from payscript.constants import (
+    COMPANY_FIELDS, COMPANY_REQUIRED, EMPLOYEE_FIELDS, EMPLOYEE_REQUIRED,
+    PAY_KINDS, RESERVED_LABELS, RESERVED_NAMES,
+)
 from payscript.errors import PayScriptError
 
 
 # --- 1. Constants and the scope record -------------------------------------
-
-# Names the user may not use for their own variables, employees or functions.
-RESERVED_NAMES = {
-    "company", "employees", "daily_rate", "hourly_rate", "minute_rate",
-    "absence_deduction", "tardiness_deduction", "basic_pay", "overtime_pay",
-    "total_add",
-    "total_exempt", "total_contribute", "total_less", "gross", "taxable",
-    "tax", "net",
-}
-
-# Labels PayScript adds to the payslip by itself.
-RESERVED_LABELS = {"Basic Pay", "Absences", "Tardiness", "Overtime",
-                   "Withholding Tax"}
-
-PAY_COMMANDS = {"ADD", "EXEMPT", "CONTRIBUTE", "LESS"}
 
 # Declarations that are only allowed at the top level of a program.
 DECLARATIONS = {
@@ -67,25 +56,8 @@ DECLARATIONS = {
     TaxTable: "TAX", FunctionDecl: "FUNCTION",
 }
 
-# Allowed fields in COMPANY / EMPLOYEE blocks: name -> (kind, minimum rule).
-#   kind "text"   = must be a string
-#   kind "number" = must be an int/Decimal
-# The last item says what the number must satisfy: "positive" (> 0) or
-# "non-negative" (>= 0). It is ignored for text.
-COMPANY_FIELDS = {
-    "working_days": ("number", "positive"),
-    "hours_per_day": ("number", "positive"),
-}
-EMPLOYEE_FIELDS = {
-    "name": ("text", None),
-    "position": ("text", None),
-    "salary": ("number", "non-negative"),
-    "absences": ("number", "non-negative"),
-    "late_minutes": ("number", "non-negative"),
-    "overtime_hours": ("number", "non-negative"),
-}
-COMPANY_REQUIRED = ("working_days", "hours_per_day")
-EMPLOYEE_REQUIRED = ("name", "salary")
+# Reserved names, reserved labels and the COMPANY / EMPLOYEE field tables are
+# shared with the interpreter and live in payscript/constants.py.
 
 
 class PayScriptWarning(UserWarning):
@@ -355,7 +327,7 @@ def _check_pay(statement, scope, labels) -> None:
     """ADD / EXEMPT / CONTRIBUTE / LESS: target, label, and amount."""
     if scope.in_function:
         _error(statement, "FUNCTION: Pay commands are not allowed inside a function.")
-    if statement.kind not in PAY_COMMANDS:
+    if statement.kind not in PAY_KINDS:
         _error(statement, f"PAY: Unknown command '{statement.kind}'.")
     _check_target(statement.target, scope)
     _check_label(statement.label, statement.target, labels)
