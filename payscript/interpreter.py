@@ -51,6 +51,9 @@ EMPLOYEE_DEFAULTS = {
 
 MAX_CALL_DEPTH = 100
 
+# A loop that runs more than this many times is assumed to be infinite.
+MAX_LOOP_ITERATIONS = 1_000_000
+
 # Overtime is paid at 125% of the hourly rate (ordinary-day overtime).
 OVERTIME_MULTIPLIER = Decimal("1.25")
 
@@ -219,6 +222,16 @@ def normalize(value):
     return value
 
 
+def copy_value(value):
+    """Arrays have value semantics: assigning or passing one copies it.
+
+    Employees and the company are shared on purpose (they are not copied).
+    """
+    if isinstance(value, list):
+        return [copy_value(item) for item in value]
+    return value
+
+
 def money(value):
     """Round an amount to whole centavos, halves going up."""
     return Decimal(normalize(value)).quantize(CENTAVO, rounding=ROUND_HALF_UP)
@@ -371,7 +384,7 @@ class Interpreter:
         self.functions[stmt.name] = Function(stmt)
 
     def exec_SetStmt(self, stmt: SetStmt):
-        value = self.evaluate(stmt.value)
+        value = copy_value(self.evaluate(stmt.value))
         target = stmt.target
         if isinstance(target, Name):
             self.current_scope()[target.name] = value
@@ -413,7 +426,15 @@ class Interpreter:
             self.execute_block(stmt.else_body)
 
     def exec_WhileStmt(self, stmt: WhileStmt):
+        runs = 0
         while self.condition(stmt.condition, "WHILE"):
+            runs += 1
+            if runs > MAX_LOOP_ITERATIONS:
+                raise PayScriptError(
+                    f"WHILE loop ran more than {MAX_LOOP_ITERATIONS:,} times; "
+                    "is it an infinite loop?",
+                    stmt.line, stmt.col,
+                )
             self.execute_block(stmt.body)
 
     def exec_ForEachStmt(self, stmt: ForEachStmt):
@@ -426,7 +447,7 @@ class Interpreter:
         scope = self.current_scope()
         # Iterate over a snapshot so changes inside the loop don't affect it.
         for item in list(iterable):
-            scope[stmt.variable.name] = item
+            scope[stmt.variable.name] = copy_value(item)
             self.execute_block(stmt.body)
 
     def exec_ForRangeStmt(self, stmt: ForRangeStmt):
@@ -435,6 +456,13 @@ class Interpreter:
         if start > end:
             raise PayScriptError(
                 f"FOR range start ({format_value(start)}) is greater than end ({format_value(end)})",
+                stmt.line, stmt.col,
+            )
+        runs = int(end - start) + 1
+        if runs > MAX_LOOP_ITERATIONS:
+            raise PayScriptError(
+                f"FOR range would run {runs:,} times; the limit is "
+                f"{MAX_LOOP_ITERATIONS:,}",
                 stmt.line, stmt.col,
             )
         scope = self.current_scope()
@@ -582,7 +610,7 @@ class Interpreter:
         if len(self.scopes) >= MAX_CALL_DEPTH:
             raise PayScriptError(f"Too many nested calls to {expr.name}", expr.line, expr.col)
 
-        args = [self.evaluate(arg) for arg in expr.arguments]
+        args = [copy_value(self.evaluate(arg)) for arg in expr.arguments]
         self.scopes.append(dict(zip(function.params, args)))
         try:
             self.execute_block(function.decl.body)

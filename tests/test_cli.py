@@ -100,3 +100,11 @@ def test_tokens_command_lists_tokens(tmp_path):
         capture_output=True, text=True, cwd=ROOT)
     assert result.returncode == 0
     assert result.stdout.split()[0] == "SET"
+
+
+def test_deeply_nested_program_gives_a_clean_error_not_a_traceback(tmp_path):
+    source = BASE + "PRINT " + "(" * 400 + "1" + ")" * 400 + "\n"
+    result = cli(tmp_path, source)
+    assert result.returncode == 1
+    assert "nested too deeply" in result.stderr
+    assert "Traceback" not in result.stderr

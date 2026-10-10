@@ -1,0 +1,15 @@
+COMPANY
+    working_days 22
+    hours_per_day 8
+END
+TAX
+    BELOW 20833       = 0%
+    20900 -> 33333    = 15%
+    ABOVE 33333       = 1875 + 20%
+END
+EMPLOYEE maria
+    name "Maria Santos"
+    salary 22000
+END
+
+// expect-error: Line 7, col 5: TAX: Gap between 20833 and 20900; income there would be taxed at 0.

@@ -35,18 +35,24 @@ def run_source(source, payslip_dir="payslips", strict=False):
     or run-time). Validator warnings are printed to stderr; with strict=True
     any warning stops the run before the interpreter starts.
     """
-    tokens = Lexer(source).tokenize()
-    program = parse(tokens)
+    try:
+        tokens = Lexer(source).tokenize()
+        program = parse(tokens)
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        validate(program)
-    for warning in caught:
-        print(f"warning: {warning.message}", file=sys.stderr)
-    if strict and caught:
-        raise ValueError(f"{len(caught)} warning(s) reported (--strict)")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            validate(program)
+        for warning in caught:
+            print(f"warning: {warning.message}", file=sys.stderr)
+        if strict and caught:
+            raise ValueError(f"{len(caught)} warning(s) reported (--strict)")
 
-    interpret(program, output=print, input_fn=input, payslip_dir=payslip_dir)
+        interpret(program, output=print, input_fn=input, payslip_dir=payslip_dir)
+    except RecursionError:
+        raise ValueError(
+            "the program is nested too deeply (too many nested brackets, "
+            "blocks or chained operators)"
+        ) from None
 
 
 def main() -> int:

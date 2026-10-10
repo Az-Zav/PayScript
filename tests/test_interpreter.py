@@ -450,3 +450,49 @@ def test_tax_is_rounded_to_centavos(run):
     src = (COMPANY + "TAX\n 0 -> 100 = 0%\n ABOVE 100 = 33.333%\nEND\n"
            'EMPLOYEE a\n name "A"\n salary 200\nEND\nPRINT a.tax')
     assert run(src).lines == ["33.33"]  # 33.333% of 100 = 33.333 -> 33.33
+
+
+# ---------- arrays are copied, loops are capped ----------
+
+def test_assigning_an_array_copies_it(out):
+    assert out("SET a TO [1, 2]\nSET b TO a\nSET b[1] TO 99\nPRINT a, b") == [
+        "[1, 2] [99, 2]"]
+
+
+def test_function_cannot_change_the_callers_array(out):
+    src = ("FUNCTION f(x)\n SET x[1] TO 99\n RETURN x[1]\nEND\n"
+           "SET a TO [1, 2]\nPRINT f(a), a")
+    assert out(src) == ["99 [1, 2]"]
+
+
+def test_changing_a_copy_of_employees_leaves_the_real_list_alone(out):
+    src = ("SET staff TO employees\nSET staff[1] TO 5\n"
+           "PRINT employees[1].name, LENGTH(employees)")
+    assert out(src) == ["Maria 1"]
+
+
+def test_loop_variable_is_a_copy_of_the_item(out):
+    src = ("SET rows TO [[1, 2], [3, 4]]\n"
+           "FOR EACH r IN rows\n SET r[1] TO 0\nEND\nPRINT rows")
+    assert out(src) == ["[[1, 2], [3, 4]]"]
+
+
+def test_runaway_while_loop_is_stopped(run, monkeypatch):
+    from payscript import interpreter
+    monkeypatch.setattr(interpreter, "MAX_LOOP_ITERATIONS", 50)
+    err = runtime_error(run, BASE + "WHILE TRUE\n PRINT 1\nEND", "infinite loop")
+    assert (err.line, err.col) == (9, 1)
+
+
+def test_loop_exactly_at_the_limit_is_allowed(run, monkeypatch):
+    from payscript import interpreter
+    monkeypatch.setattr(interpreter, "MAX_LOOP_ITERATIONS", 5)
+    src = BASE + "SET i TO 0\nWHILE i < 5\n SET i TO i + 1\nEND\nPRINT i"
+    assert run(src).lines == ["5"]
+
+
+def test_huge_for_range_is_rejected_before_it_runs(run, monkeypatch):
+    from payscript import interpreter
+    monkeypatch.setattr(interpreter, "MAX_LOOP_ITERATIONS", 100)
+    runtime_error(run, BASE + "FOR EACH i IN 1 -> 101\n PRINT i\nEND", "limit is 100")
+    assert run(BASE + "FOR EACH i IN 1 -> 100\n SET t TO i\nEND").lines == []
