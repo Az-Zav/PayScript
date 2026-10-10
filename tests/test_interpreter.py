@@ -219,6 +219,19 @@ def test_tax_brackets(run, salary, expected):
     assert tax_of(run, salary) == expected
 
 
+def test_fractional_income_just_above_a_range_uses_the_next_row(run):
+    # 33333.50 is past the RANGE end, so ABOVE applies: 1875 + 20% * 0.50.
+    src = (COMPANY + TAX + 'EMPLOYEE a\n name "A"\n salary 33333.5\nEND\n'
+           "PRINT a.tax")
+    assert run(src).lines == ["1875.10"]
+
+
+def test_percentage_counts_from_the_rows_own_lower_bound(run):
+    src = (COMPANY + "TAX\n ABOVE 1000 = 100 + 10%\nEND\n"
+           'EMPLOYEE a\n name "A"\n salary 2000\nEND\nPRINT a.tax')
+    assert run(src).lines == ["200.00"]  # 100 + 10% of (2000 - 1000)
+
+
 def test_tax_reduces_net(run):
     src = (COMPANY + TAX + 'EMPLOYEE a\n name "A"\n salary 28000\nEND\n'
            "PRINT a.gross, a.tax, a.net")

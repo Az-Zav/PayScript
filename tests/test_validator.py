@@ -299,6 +299,38 @@ def test_below_and_above_overlap():
         check(BASE + "TAX\n BELOW 500 = 0%\n ABOVE 100 = 10%\nEND")
 
 
+def test_gap_between_tax_rows_is_an_error():
+    err = rejects(BASE + "TAX\n BELOW 100 = 0%\n 200 -> 300 = 10%\n"
+                  " ABOVE 300 = 20%\nEND", "Gap between 100 and 200")
+    assert err.line == 11  # the row after the gap
+
+
+def test_fractional_gap_between_rows_is_an_error():
+    rejects(BASE + "TAX\n BELOW 100 = 0%\n 100 -> 200 = 10%\n"
+            " 201 -> 300 = 15%\n ABOVE 300 = 20%\nEND", "Gap between 200 and 201")
+
+
+def test_single_point_gap_between_exclusive_limits_is_an_error():
+    # BELOW 100 and ABOVE 100 both exclude 100 itself.
+    rejects(BASE + "TAX\n BELOW 100 = 0%\n ABOVE 100 = 10%\nEND", "Gap between 100")
+
+
+def test_rows_may_be_written_out_of_order_without_a_gap():
+    assert check(BASE + "TAX\n ABOVE 200 = 20%\n BELOW 100 = 0%\n"
+                 " 100 -> 200 = 10%\nEND") == []
+
+
+def test_tax_table_without_above_row_warns():
+    warns = check(BASE + "TAX\n BELOW 100 = 0%\n 100 -> 200 = 10%\nEND")
+    assert len(warns) == 1
+    assert issubclass(warns[0].category, PayScriptWarning)
+    assert "above 200" in str(warns[0].message)
+
+
+def test_tax_table_with_above_row_does_not_warn():
+    assert check(BASE + "TAX\n 100 -> 200 = 10%\n ABOVE 200 = 20%\nEND") == []
+
+
 # ---------- the validator reports the first problem, with a location ----------
 
 def test_error_location_is_the_offending_node():

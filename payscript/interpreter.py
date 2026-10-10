@@ -658,33 +658,20 @@ class Interpreter:
     # ---------- tax ----------
 
     def prepare_tax_rows(self, table: TaxTable):
-        """Turn TAX rows into (kind, lower, upper, fixed, fraction, base), sorted.
+        """Turn TAX rows into (kind, lower, upper, fixed, fraction, base).
 
-        base is where the percentage starts: the previous row's limit
-        (or the row's own lower bound for the first row).
+        base is where the percentage starts counting: the row's own lower
+        bound ("tax on the excess over it"), or 0 for a BELOW row.
         """
-        rows = []
+        prepared = []
         for row in table.rows:
             bracket, rate = row.bracket, row.rate
             lower = bracket.lower.value if bracket.lower is not None else None
             upper = bracket.upper.value if bracket.upper is not None else None
             fixed = rate.fixed_amount.value if rate.fixed_amount is not None else 0
             fraction = rate.fraction.value if rate.fraction is not None else 0
-            rows.append([bracket.kind, lower, upper, fixed, fraction])
-
-        def start(row):
-            return float("-inf") if row[1] is None else row[1]
-
-        rows.sort(key=start)
-        prepared = []
-        previous_limit = None
-        for kind, lower, upper, fixed, fraction in rows:
-            if previous_limit is not None:
-                base = previous_limit
-            else:
-                base = lower if lower is not None else 0
-            prepared.append((kind, lower, upper, fixed, fraction, base))
-            previous_limit = upper if upper is not None else lower
+            base = lower if lower is not None else 0
+            prepared.append((bracket.kind, lower, upper, fixed, fraction, base))
         return prepared
 
     def compute_tax(self, taxable):

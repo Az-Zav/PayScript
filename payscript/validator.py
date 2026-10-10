@@ -625,10 +625,21 @@ def _check_tax(table: TaxTable) -> None:
     Each row becomes an interval ``(low, high, low_included, high_included)``.
     BELOW and ABOVE exclude their limit; RANGE (``a -> b``) includes both ends.
 
+    Rows must not overlap and must leave no gap between them: any income
+    between two rows (fractions of a peso included) would be taxed at 0, which
+    is almost always a typo. Income below the first row is allowed to be
+    untaxed. A table that stops without an ABOVE row only warns, because
+    income above its last row would be taxed at 0.
+
     Raises:
-        PayScriptError: For reversed ranges, non-numeric bounds, or overlaps.
+        PayScriptError: For reversed ranges, non-numeric bounds, overlaps or
+            gaps between rows.
+
+    Warns:
+        PayScriptWarning: When no row covers the highest incomes.
     """
     intervals = []
+    rows_by_interval = {}
     for row in table.rows:
         bracket = row.bracket
         low, high = _number(bracket.lower), _number(bracket.upper)
@@ -647,6 +658,37 @@ def _check_tax(table: TaxTable) -> None:
         if any(_overlap(previous, interval) for previous in intervals):
             _error(row, "TAX: Brackets must not overlap.")
         intervals.append(interval)
+        rows_by_interval[interval] = row
+
+    _check_tax_coverage(intervals, rows_by_interval)
+
+
+def _check_tax_coverage(intervals: list, rows_by_interval: dict) -> None:
+    """Reject gaps between TAX rows and warn when the top is left open.
+
+    Args:
+        intervals: ``(low, high, low_included, high_included)`` per row.
+        rows_by_interval: The TaxRow each interval came from, for locations.
+    """
+    if not intervals:
+        return
+    ordered = sorted(intervals, key=lambda interval: (interval[0], interval[1]))
+
+    for previous, current in zip(ordered, ordered[1:]):
+        high, low = previous[1], current[0]
+        touching_and_closed = high == low and (previous[3] or current[2])
+        if high < low or (high == low and not touching_and_closed):
+            _error(rows_by_interval[current],
+                   f"TAX: Gap between {high:g} and {low:g}; income there "
+                   "would be taxed at 0.")
+
+    last = ordered[-1]
+    if last[1] != float("inf"):
+        row = rows_by_interval[last]
+        warnings.warn(
+            f"Line {row.line}, col {row.col}: TAX: No row covers income "
+            f"above {last[1]:g}; it would be taxed at 0 (add an ABOVE row).",
+            PayScriptWarning, stacklevel=2)
 
 
 def _overlap(first: tuple, second: tuple) -> bool:
