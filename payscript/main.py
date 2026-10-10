@@ -1,6 +1,6 @@
 """Command-line interface for PayScript.
 
-Usage:  payscript run <file.ps>
+Usage:  payscript run <file.ps> [--out DIR] [--strict]
         payscript tokens <file.ps>     (debug: print the token stream)
 
 Pipeline:  source -> Lexer -> parse -> validate -> interpret
@@ -28,11 +28,12 @@ def read_source(filename):
         raise ValueError(f"{path} is not a valid UTF-8 text file") from None
 
 
-def run_source(source):
+def run_source(source, payslip_dir="payslips", strict=False):
     """Run PayScript source text through every stage.
 
     Raises PayScriptError for any language error (lexical, syntax, semantic
-    or run-time). Validator warnings are printed to stderr.
+    or run-time). Validator warnings are printed to stderr; with strict=True
+    any warning stops the run before the interpreter starts.
     """
     tokens = Lexer(source).tokenize()
     program = parse(tokens)
@@ -42,8 +43,10 @@ def run_source(source):
         validate(program)
     for warning in caught:
         print(f"warning: {warning.message}", file=sys.stderr)
+    if strict and caught:
+        raise ValueError(f"{len(caught)} warning(s) reported (--strict)")
 
-    interpret(program, output=print, input_fn=input, payslip_dir="payslips")
+    interpret(program, output=print, input_fn=input, payslip_dir=payslip_dir)
 
 
 def main() -> int:
@@ -52,6 +55,10 @@ def main() -> int:
     subparsers = arg_parser.add_subparsers(dest="command", required=True)
     run_parser = subparsers.add_parser("run", help="run a PayScript source file")
     run_parser.add_argument("filename", help="path to a .ps source file")
+    run_parser.add_argument("--out", default="payslips", metavar="DIR",
+                            help="folder for generated payslips (default: payslips)")
+    run_parser.add_argument("--strict", action="store_true",
+                            help="treat validator warnings as errors")
     tokens_parser = subparsers.add_parser(
         "tokens", help="print the token stream of a source file (debugging)")
     tokens_parser.add_argument("filename", help="path to a .ps source file")
@@ -64,7 +71,7 @@ def main() -> int:
                 print(f"{token.type.name:12} {token.value!r:24} "
                       f"Line {token.line} Col {token.col}")
             return 0
-        run_source(source)
+        run_source(source, payslip_dir=args.out, strict=args.strict)
     except PayScriptError as error:
         # str(error) is already "Line 4, col 7: message"
         print(error, file=sys.stderr)

@@ -51,6 +51,12 @@ class PipelineTests(unittest.TestCase):
         with mock.patch("sys.argv", ["payscript", "run", "no_such_file.ps"]):
             self.assertEqual(main(), 1)
 
+    def test_out_option_chooses_payslip_folder(self):
+        source = (SAMPLES / "valid/06_arrays_for.ps").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as scratch:
+            run_source(source, payslip_dir=str(Path(scratch) / "slips"))
+            self.assertTrue((Path(scratch) / "slips" / "john.txt").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
