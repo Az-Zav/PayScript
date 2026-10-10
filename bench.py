@@ -8,7 +8,7 @@ Run from the folder that CONTAINS the `payscript` package folder:
 
 Times are medians in milliseconds. Payslips go to a temp folder, not yours.
 """
-import argparse, glob, os, platform, shutil, statistics, sys, tempfile, time
+import argparse, glob, os, platform, shutil, statistics, tempfile, time
 
 from payscript.lexer import Lexer
 from payscript.parser import parse

@@ -6,7 +6,7 @@ import pytest
 
 from payscript.errors import PayScriptError
 
-from conftest import BASE, COMPANY, MARIA, parse_source
+from conftest import BASE, COMPANY, parse_source
 from payscript.interpreter import interpret
 
 

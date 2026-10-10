@@ -3,6 +3,16 @@ from decimal import Decimal
 from payscript.errors import PayScriptError
 from payscript.tokens import KEYWORDS, SYMBOLS, Token, T
 
+def is_digit(ch):
+    """True for 0-9 only (str.isdigit() also accepts digits of other scripts)."""
+    return ch.isascii() and ch.isdigit()
+
+
+def is_letter(ch):
+    """True for a-z / A-Z only, so names and keywords are plain ASCII."""
+    return ch.isascii() and ch.isalpha()
+
+
 class Lexer:
     def __init__(self, source):                     #Attributes of the Lexer class
         self.src = source.replace("\r\n", "\n")     #Normalize window line endings to just \n
@@ -10,7 +20,7 @@ class Lexer:
         self.line = 1                               #Line number
         self.col = 1                                #Column number
         self.tokens = []                            #All tokens recognized in the source code appended here
-        self.depth = 0                              #Depth of nested blocks (used for indentation, parentheses, or brackets)
+        self.open_brackets = []                     #Opening ( and [ tokens not yet closed; newlines are ignored while any are open
 
     def peek(self, offset=0):
         i = self.pos + offset
@@ -36,19 +46,26 @@ class Lexer:
             if ch in " \t\r":                                       
                 self.advance()                                      #Moves the position forward by one character if ch is whitespace, tab, or leftover carraige returns
             elif ch == "\n":                                        # Chcek if the current character is a newline character
-                if self.depth == 0:
+                if not self.open_brackets:
                     self.add_token(T.NEWLINE, None, line, col)      #Recognize ch as NEWLINE token and append it to the tokens list if depth is 0
                 self.advance()
             elif ch == "/" and self.peek(1) == "/":                 #Check if current two characters is a comment
                 self.skip_comment()
             elif ch == '"':
                 self.read_string(line, col)
-            elif ch.isdigit():
+            elif is_digit(ch):
                 self.read_number(line, col)    
-            elif ch.isalpha() or ch == "_":
+            elif is_letter(ch) or ch == "_":
                 self.read_word(line, col)
             else:
                 self.read_symbol(line, col)
+
+        if self.open_brackets:                                      # a ( or [ was never closed: say where it was opened
+            opener = self.open_brackets[-1]
+            raise PayScriptError(
+                f"unclosed '{opener.value}' (it is never closed with "
+                f"'{')' if opener.value == '(' else ']'}')",
+                opener.line, opener.col)
 
         if self.tokens and self.tokens[-1].type != T.NEWLINE:       # Shortcircuit: check if tokens contains anything, and check if last token is not a NEWLINE token
             self.add_token(T.NEWLINE, None, self.line, self.col)    # Add a NEWLINE token if the last token is not already a NEWLINE token
@@ -75,13 +92,13 @@ class Lexer:
 
     def read_number(self, line, col):
         start = self.pos
-        while self.peek().isdigit():
+        while is_digit(self.peek()):
             self.advance()
         is_float = False
-        if self.peek() == "." and self.peek(1).isdigit():
+        if self.peek() == "." and is_digit(self.peek(1)):
             is_float = True
             self.advance()
-            while self.peek().isdigit():
+            while is_digit(self.peek()):
                 self.advance()
         text = self.src[start:self.pos]
         value = Decimal(text) if is_float else int(text)
@@ -94,7 +111,7 @@ class Lexer:
 
     def read_word(self, line, col):
         start = self.pos
-        while self.peek().isalnum() or self.peek() == "_":
+        while is_letter(self.peek()) or is_digit(self.peek()) or self.peek() == "_":
             self.advance()
         word = self.src[start:self.pos]
 
@@ -120,11 +137,12 @@ class Lexer:
         for _ in text:
             self.advance()
 
+        token = Token(type_, text, line, col)
         if type_ in (T.LPAREN, T.LBRACKET):
-            self.depth += 1
-        elif type_ in (T.RPAREN, T.RBRACKET):
-            self.depth = max(0, self.depth - 1)
+            self.open_brackets.append(token)
+        elif type_ in (T.RPAREN, T.RBRACKET) and self.open_brackets:
+            self.open_brackets.pop()
 
-        self.add_token(type_, text, line, col)
+        self.tokens.append(token)
 
 

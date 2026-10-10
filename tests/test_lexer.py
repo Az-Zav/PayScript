@@ -31,7 +31,8 @@ def test_keyword_set_matches_the_documented_grammar():
 
 @pytest.mark.parametrize("text,type_", sorted(SYMBOLS.items()))
 def test_every_symbol_is_recognised(text, type_):
-    assert tokens(text)[0].type is type_
+    closer = {"(": ")", "[": "]"}.get(text, "")  # a lone opener is an error
+    assert tokens(text + closer)[0].type is type_
 
 
 def test_two_character_symbols_win_over_one_character():
@@ -137,3 +138,32 @@ def test_lowercase_keyword_is_just_an_identifier():
 
 def test_error_text_format_is_line_col_message():
     assert str(error_of("\n  @")) == "Line 2, col 3: unknown character '@'"
+
+
+
+# ---------- unclosed brackets, ASCII-only names ----------
+
+def test_unclosed_parenthesis_points_at_where_it_was_opened():
+    err = error_of("COMPANY\nPRINT f(1,\nPRINT 2\n")
+    assert err.message.startswith("unclosed '('")
+    assert (err.line, err.col) == (2, 8)
+
+
+def test_unclosed_bracket_is_reported_at_end_of_file():
+    err = error_of("SET a TO [1, 2\n")
+    assert err.message.startswith("unclosed '['")
+    assert (err.line, err.col) == (1, 10)
+
+
+def test_stray_closing_bracket_is_left_to_the_parser():
+    assert tokens(")")[0].type is T.RPAREN
+
+
+@pytest.mark.parametrize("source", ["SET café TO 1", "SET x TO ٣"])
+def test_non_ascii_letters_and_digits_are_rejected_outside_text(source):
+    assert "unknown character" in error_of(source).message
+
+
+def test_non_ascii_text_is_fine_inside_strings_and_comments():
+    toks = tokens('PRINT "María" // café')
+    assert toks[1].value == "María"

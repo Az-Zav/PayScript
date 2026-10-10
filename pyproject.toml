@@ -17,7 +17,12 @@ payscript = "payscript.main:main"
 packages = ["payscript"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "ruff>=0.5"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff.lint]
+# Real mistakes only (unused imports/variables, undefined names, syntax errors).
+# Style rules are left off on purpose.
+select = ["F", "E9"]

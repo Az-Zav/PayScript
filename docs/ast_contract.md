@@ -1,6 +1,6 @@
 # PayScript AST Contract
 
-Status: Implemented on Dev 3's branch; ready for team review.
+Status: Implemented and in use by the parser, validator and interpreter.
 
 ## Import and construction
 
@@ -20,8 +20,8 @@ statement = PayStmt(
 )
 ```
 
-Dev 2 creates these nodes. Dev 3 validates them.
-Dev 4 reads them to execute the program.
+The parser creates these nodes, the validator checks them and the
+interpreter reads them to execute the program.
 Do not create separate copies of these classes.
 
 ## Source locations
@@ -85,7 +85,9 @@ Node, Expr, and Stmt are base classes.
 - Operators use source text: "+", "=", "AND", "NOT", etc.
 - PayStmt.kind is "ADD", "EXEMPT", "CONTRIBUTE", or "LESS".
 - PayStmt.label is a Literal containing text without surrounding quotes.
-- Numbers use int or float, matching the token contract.
+- Numbers are `int` (whole numbers) or `decimal.Decimal` (fractions), matching
+  the token contract. The interpreter also accepts a hand-built `float` and
+  converts it to `Decimal`.
 - Percentages are already normalized: 20% is 0.20.
   Do not divide by 100 again.
 - TRUE and FALSE become Python True and False.
@@ -95,7 +97,8 @@ Node, Expr, and Stmt are base classes.
 - FOR over a numeric range uses ForRangeStmt.
 - Array indices retain PayScript's 1-based values.
 - SET and payroll targets use Name or IndexAccess, matching the EBNF.
-  The team must confirm semantic eligibility of indexed payroll targets.
+  The validator accepts an indexed payroll target (employees[1]); the
+  interpreter confirms at run time that the item really is an employee.
 
 ## Tax representation
 
@@ -109,8 +112,8 @@ Bounds are Literal nodes.
 
 TaxRate parts are Literal nodes, with None meaning zero:
 
-- 15%: fixed_amount=None, fraction=0.15.
-- 1875 + 20%: fixed_amount=1875, fraction=0.20.
+- 15%: fixed_amount=None, fraction=Decimal("0.15").
+- 1875 + 20%: fixed_amount=1875, fraction=Decimal("0.20").
 - 500: fixed_amount=500, fraction=None.
 
 The numbers above describe Literal.value.
@@ -124,15 +127,15 @@ Nodes use frozen dataclasses, preventing attribute reassignment.
 Their lists remain mutable; consumers should treat completed trees as read-only.
 
 Use the shared PayScriptError(message, line, col) from payscript.errors.
-Validator implementation is the next milestone.
 
 ## Tests
 
-Install pytest in the project environment, then run:
+Install the dev extras in the project environment (`pip install -e ".[dev]"`),
+then run:
 
 ```text
 python -m pytest tests/test_ast_nodes.py -v
 ```
 
-Current AST test result: 6 passed.
 These tests cover construction and structure, not full pipeline execution.
+The full suite is `python -m pytest`.
