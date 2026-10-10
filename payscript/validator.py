@@ -48,13 +48,15 @@ from payscript.errors import PayScriptError
 # Names the user may not use for their own variables, employees or functions.
 RESERVED_NAMES = {
     "company", "employees", "daily_rate", "hourly_rate", "minute_rate",
-    "absence_deduction", "tardiness_deduction", "basic_pay", "total_add",
+    "absence_deduction", "tardiness_deduction", "basic_pay", "overtime_pay",
+    "total_add",
     "total_exempt", "total_contribute", "total_less", "gross", "taxable",
     "tax", "net",
 }
 
 # Labels PayScript adds to the payslip by itself.
-RESERVED_LABELS = {"Basic Pay", "Absences", "Tardiness", "Withholding Tax"}
+RESERVED_LABELS = {"Basic Pay", "Absences", "Tardiness", "Overtime",
+                   "Withholding Tax"}
 
 PAY_COMMANDS = {"ADD", "EXEMPT", "CONTRIBUTE", "LESS"}
 

@@ -37,7 +37,8 @@ from payscript.errors import PayScriptError
 
 
 PAY_KINDS = ("ADD", "EXEMPT", "CONTRIBUTE", "LESS")
-RESERVED_LABELS = {"Basic Pay", "Absences", "Tardiness", "Withholding Tax"}
+RESERVED_LABELS = {"Basic Pay", "Absences", "Tardiness", "Overtime",
+                   "Withholding Tax"}
 
 # Optional employee fields and their defaults.
 EMPLOYEE_DEFAULTS = {
@@ -48,6 +49,9 @@ EMPLOYEE_DEFAULTS = {
 }
 
 MAX_CALL_DEPTH = 100
+
+# Overtime is paid at 125% of the hourly rate (ordinary-day overtime).
+OVERTIME_MULTIPLIER = 1.25
 
 
 # ===================== RUNTIME OBJECTS =====================
@@ -117,6 +121,11 @@ class Employee:
     def tardiness_deduction(self, node):
         return float(self.fields["late_minutes"] * self.minute_rate(node))
 
+    def overtime_pay(self, node):
+        return float(
+            self.fields["overtime_hours"] * self.hourly_rate(node) * OVERTIME_MULTIPLIER
+        )
+
     def basic_pay(self, node):
         return float(
             self.fields["salary"]
@@ -125,14 +134,20 @@ class Employee:
         )
 
     def taxable(self, node):
-        value = self.basic_pay(node) + self.total("ADD") - self.total("CONTRIBUTE")
+        value = (
+            self.basic_pay(node) + self.overtime_pay(node)
+            + self.total("ADD") - self.total("CONTRIBUTE")
+        )
         return max(0.0, value)
 
     def tax(self, node):
         return self.interpreter.compute_tax(self.taxable(node))
 
     def gross(self, node):
-        return self.basic_pay(node) + self.total("ADD") + self.total("EXEMPT")
+        return (
+            self.basic_pay(node) + self.overtime_pay(node)
+            + self.total("ADD") + self.total("EXEMPT")
+        )
 
     def net(self, node):
         return (
@@ -149,6 +164,7 @@ class Employee:
         "absence_deduction": absence_deduction,
         "tardiness_deduction": tardiness_deduction,
         "basic_pay": basic_pay,
+        "overtime_pay": overtime_pay,
         "total_add": lambda self, node: self.total("ADD"),
         "total_exempt": lambda self, node: self.total("EXEMPT"),
         "total_contribute": lambda self, node: self.total("CONTRIBUTE"),
@@ -695,10 +711,13 @@ class Interpreter:
 
         absence = employee.absence_deduction(node)
         tardiness = employee.tardiness_deduction(node)
+        overtime = employee.overtime_pay(node)
         if absence > 0:
             rows.append(("Absences", format_money(absence)))
         if tardiness > 0:
             rows.append(("Tardiness", format_money(tardiness)))
+        if overtime > 0:
+            rows.append(("Overtime", format_money(overtime)))
         for kind in ("ADD", "EXEMPT", "CONTRIBUTE"):
             for label, amount in employee.items[kind]:
                 rows.append((label, format_money(amount)))

@@ -99,7 +99,8 @@ def test_all_employee_fields_are_accepted():
 
 @pytest.mark.parametrize("name", [
     "company", "employees", "daily_rate", "hourly_rate", "minute_rate",
-    "absence_deduction", "tardiness_deduction", "basic_pay", "total_add",
+    "absence_deduction", "tardiness_deduction", "basic_pay", "overtime_pay",
+    "total_add",
     "total_exempt", "total_contribute", "total_less", "gross", "taxable",
     "tax", "net",
 ])
@@ -187,7 +188,7 @@ def test_pay_target_may_be_indexed():
 
 
 @pytest.mark.parametrize("label", ["Basic Pay", "Absences", "Tardiness",
-                                   "Withholding Tax"])
+                                   "Overtime", "Withholding Tax"])
 def test_reserved_labels(label):
     rejects(BASE + f'ADD maria "{label}" 1', "reserved")
 

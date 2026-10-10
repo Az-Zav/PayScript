@@ -367,3 +367,28 @@ def test_runaway_recursion_is_stopped_if_validation_is_skipped(tmp_path):
 def test_run_time_error_has_the_line_of_the_problem(run):
     err = runtime_error(run, BASE + "PRINT 1\nPRINT 1 / 0", "Division by zero")
     assert err.line == 10
+
+
+# ---------- overtime ----------
+
+OVERTIME = COMPANY + (
+    'EMPLOYEE a\n name "A"\n salary 22000\n overtime_hours 5\nEND\n'
+)
+
+
+def test_overtime_pay_is_125_percent_of_hourly_rate(run):
+    # hourly_rate = 22000 / 22 / 8 = 125.00; 5 * 125 * 1.25 = 781.25
+    assert run(OVERTIME + "PRINT a.overtime_pay").lines == ["781.25"]
+    assert run(BASE + "PRINT maria.overtime_pay").lines == ["0.00"]
+
+
+def test_overtime_is_added_to_gross_and_taxable(run):
+    res = run(OVERTIME + "PRINT a.gross, a.taxable, a.net")
+    assert res.lines == ["22781.25 22781.25 22781.25"]
+
+
+def test_overtime_row_on_payslip_only_when_non_zero(run):
+    assert "Overtime" not in run(BASE + "PAYSLIP maria").payslip("maria")
+    text = run(OVERTIME + "PAYSLIP a").payslip("a")
+    row = next(l for l in text.splitlines() if l.startswith("Overtime"))
+    assert row.split() == ["Overtime", "781.25"]

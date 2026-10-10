@@ -13,7 +13,6 @@ END
 
 SET extra TO INPUT("Bonus for " + maria.name + ": ")
 
-ADD maria "Overtime" maria.overtime_hours * maria.hourly_rate * 1.25
 ADD maria "Bonus" extra
 EXEMPT maria "Meal Allowance" 1000
 CONTRIBUTE maria "SSS" 900
