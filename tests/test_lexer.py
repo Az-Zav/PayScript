@@ -1,5 +1,7 @@
 """Lexer: every keyword, symbol, literal form and lexical error."""
 
+from decimal import Decimal
+
 import pytest
 
 from payscript.errors import PayScriptError
@@ -46,9 +48,9 @@ def test_identifier_forms():
 def test_integer_float_and_percent_values():
     a, b, c, d = tokens("500 1.25 20% 12.5%")[:4]
     assert (a.type, a.value) == (T.NUMBER, 500) and isinstance(a.value, int)
-    assert (b.type, b.value) == (T.NUMBER, 1.25)
-    assert (c.type, c.value) == (T.PERCENT, pytest.approx(0.20))
-    assert (d.type, d.value) == (T.PERCENT, pytest.approx(0.125))
+    assert (b.type, b.value) == (T.NUMBER, Decimal("1.25"))
+    assert (c.type, c.value) == (T.PERCENT, Decimal("0.20"))
+    assert (d.type, d.value) == (T.PERCENT, Decimal("0.125"))
 
 
 def test_number_followed_by_dot_without_digit_is_not_a_float():

@@ -7,6 +7,7 @@ time they are read, so PRINT before and after an ADD can show different values.
 
 from __future__ import annotations
 
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 from payscript.ast_nodes import (
@@ -51,14 +52,16 @@ EMPLOYEE_DEFAULTS = {
 MAX_CALL_DEPTH = 100
 
 # Overtime is paid at 125% of the hourly rate (ordinary-day overtime).
-OVERTIME_MULTIPLIER = 1.25
+OVERTIME_MULTIPLIER = Decimal("1.25")
+
+CENTAVO = Decimal("0.01")
 
 
 # ===================== RUNTIME OBJECTS =====================
 
 class Company:
     def __init__(self, fields):
-        self.fields = fields
+        self.fields = {name: normalize(value) for name, value in fields.items()}
 
     def get(self, field_name, node):
         if field_name not in self.fields:
@@ -69,7 +72,10 @@ class Company:
 class Employee:
     def __init__(self, handle, fields, interpreter):
         self.handle = handle
-        self.fields = {**EMPLOYEE_DEFAULTS, **fields}
+        self.fields = {
+            name: normalize(value)
+            for name, value in {**EMPLOYEE_DEFAULTS, **fields}.items()
+        }
         self.interpreter = interpreter
         # Pay lines in the order they were added: kind -> [(label, amount)].
         self.items = {kind: [] for kind in PAY_KINDS}
@@ -90,7 +96,7 @@ class Employee:
         self.items[kind].append((label, amount))
 
     def total(self, kind):
-        return float(sum(amount for _, amount in self.items[kind]))
+        return sum((amount for _, amount in self.items[kind]), Decimal(0))
 
     # ---------- computed fields ----------
 
@@ -104,31 +110,31 @@ class Employee:
         working_days = self._company(node).get("working_days", node)
         if working_days == 0:
             raise PayScriptError("Division by zero: company.working_days is 0", node.line, node.col)
-        return self.fields["salary"] / working_days
+        return Decimal(self.fields["salary"]) / Decimal(working_days)
 
     def hourly_rate(self, node):
         hours_per_day = self._company(node).get("hours_per_day", node)
         if hours_per_day == 0:
             raise PayScriptError("Division by zero: company.hours_per_day is 0", node.line, node.col)
-        return self.daily_rate(node) / hours_per_day
+        return self.daily_rate(node) / Decimal(hours_per_day)
 
     def minute_rate(self, node):
         return self.hourly_rate(node) / 60
 
     def absence_deduction(self, node):
-        return float(self.fields["absences"] * self.daily_rate(node))
+        return money(self.fields["absences"] * self.daily_rate(node))
 
     def tardiness_deduction(self, node):
-        return float(self.fields["late_minutes"] * self.minute_rate(node))
+        return money(self.fields["late_minutes"] * self.minute_rate(node))
 
     def overtime_pay(self, node):
-        return float(
+        return money(
             self.fields["overtime_hours"] * self.hourly_rate(node) * OVERTIME_MULTIPLIER
         )
 
     def basic_pay(self, node):
-        return float(
-            self.fields["salary"]
+        return (
+            money(self.fields["salary"])
             - self.absence_deduction(node)
             - self.tardiness_deduction(node)
         )
@@ -138,7 +144,7 @@ class Employee:
             self.basic_pay(node) + self.overtime_pay(node)
             + self.total("ADD") - self.total("CONTRIBUTE")
         )
-        return max(0.0, value)
+        return max(Decimal(0), value)
 
     def tax(self, node):
         return self.interpreter.compute_tax(self.taxable(node))
@@ -203,7 +209,19 @@ class ReturnSignal(Exception):
 # ===================== VALUE HELPERS =====================
 
 def is_number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
+
+
+def normalize(value):
+    """Numbers are ints or Decimals; a float (hand-built AST) becomes a Decimal."""
+    if isinstance(value, float):
+        return Decimal(str(value))
+    return value
+
+
+def money(value):
+    """Round an amount to whole centavos, halves going up."""
+    return Decimal(normalize(value)).quantize(CENTAVO, rounding=ROUND_HALF_UP)
 
 
 def type_name(value):
@@ -226,8 +244,8 @@ def format_value(value):
     """How a value looks on screen. Money is rounded only when shown."""
     if isinstance(value, bool):
         return "TRUE" if value else "FALSE"
-    if isinstance(value, float):
-        return f"{value:.2f}"
+    if isinstance(value, (float, Decimal)):
+        return format(money(value), "f")
     if isinstance(value, int):
         return str(value)
     if isinstance(value, list):
@@ -240,7 +258,7 @@ def format_value(value):
 
 
 def format_money(amount):
-    return f"{amount:.2f}"
+    return format(money(amount), "f")
 
 
 def convert_input(text):
@@ -251,11 +269,11 @@ def convert_input(text):
     except ValueError:
         pass
     try:
-        number = float(stripped)
-    except ValueError:
+        number = Decimal(stripped)
+    except ArithmeticError:
         return text
-    # Reject things like "nan" or "inf" that float() accepts.
-    if number != number or number in (float("inf"), float("-inf")):
+    # Reject things like "nan" or "inf" that Decimal() accepts.
+    if not number.is_finite():
         return text
     return number
 
@@ -318,7 +336,7 @@ class Interpreter:
     def exec_CompanyDecl(self, stmt: CompanyDecl):
         if self.company is not None:
             raise PayScriptError("Only one COMPANY block is allowed", stmt.line, stmt.col)
-        fields = {entry.name: entry.value.value for entry in stmt.fields}
+        fields = {entry.name: normalize(entry.value.value) for entry in stmt.fields}
         for required in ("working_days", "hours_per_day"):
             if required not in fields:
                 raise PayScriptError(f"COMPANY is missing required field {required}", stmt.line, stmt.col)
@@ -327,7 +345,7 @@ class Interpreter:
     def exec_EmployeeDecl(self, stmt: EmployeeDecl):
         if stmt.handle in self.employees:
             raise PayScriptError(f"EMPLOYEE {stmt.handle} is already declared", stmt.line, stmt.col)
-        fields = {entry.name: entry.value.value for entry in stmt.fields}
+        fields = {entry.name: normalize(entry.value.value) for entry in stmt.fields}
         for required in ("name", "salary"):
             if required not in fields:
                 raise PayScriptError(
@@ -376,7 +394,7 @@ class Interpreter:
                 f"{stmt.kind} amount must be a number, got {type_name(amount)}",
                 stmt.amount.line, stmt.amount.col,
             )
-        employee.add_item(stmt.kind, stmt.label.value, amount, stmt.label)
+        employee.add_item(stmt.kind, stmt.label.value, money(amount), stmt.label)
 
     def exec_PayslipStmt(self, stmt: PayslipStmt):
         employee = self.resolve_employee(stmt.target, "PAYSLIP")
@@ -442,7 +460,7 @@ class Interpreter:
         return method(expr)
 
     def eval_Literal(self, expr: Literal):
-        return expr.value
+        return normalize(expr.value)
 
     def eval_ArrayLiteral(self, expr: ArrayLiteral):
         return [self.evaluate(item) for item in expr.items]
@@ -495,7 +513,7 @@ class Interpreter:
                 return left * right
             if right == 0:
                 raise PayScriptError("Division by zero", expr.line, expr.col)
-            return left / right
+            return Decimal(left) / Decimal(right)
 
         if op in ("=", "!="):
             self.require_same_type(left, right, op, expr)
@@ -666,18 +684,18 @@ class Interpreter:
         prepared = []
         for row in table.rows:
             bracket, rate = row.bracket, row.rate
-            lower = bracket.lower.value if bracket.lower is not None else None
-            upper = bracket.upper.value if bracket.upper is not None else None
-            fixed = rate.fixed_amount.value if rate.fixed_amount is not None else 0
-            fraction = rate.fraction.value if rate.fraction is not None else 0
+            lower = normalize(bracket.lower.value) if bracket.lower is not None else None
+            upper = normalize(bracket.upper.value) if bracket.upper is not None else None
+            fixed = normalize(rate.fixed_amount.value) if rate.fixed_amount is not None else 0
+            fraction = normalize(rate.fraction.value) if rate.fraction is not None else 0
             base = lower if lower is not None else 0
             prepared.append((bracket.kind, lower, upper, fixed, fraction, base))
         return prepared
 
     def compute_tax(self, taxable):
         if not self.tax_rows:
-            return 0.0
-        taxable = max(0.0, taxable)
+            return money(0)
+        taxable = max(Decimal(0), taxable)
         for kind, lower, upper, fixed, fraction, base in self.tax_rows:
             if kind == "BELOW":
                 matches = taxable < upper
@@ -686,8 +704,8 @@ class Interpreter:
             else:  # RANGE, both ends included
                 matches = lower <= taxable <= upper
             if matches:
-                return float(fixed + fraction * max(0.0, taxable - base))
-        return 0.0
+                return money(fixed + fraction * max(Decimal(0), taxable - base))
+        return money(0)
 
     # ---------- payslips ----------
 

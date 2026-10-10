@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 from payscript.ast_nodes import (
     ArrayLiteral, BinaryExpr, CallExpr, CompanyDecl, EmployeeDecl, FieldAccess,
@@ -68,7 +69,7 @@ DECLARATIONS = {
 
 # Allowed fields in COMPANY / EMPLOYEE blocks: name -> (kind, minimum rule).
 #   kind "text"   = must be a string
-#   kind "number" = must be an int/float
+#   kind "number" = must be an int/Decimal
 # The last item says what the number must satisfy: "positive" (> 0) or
 # "non-negative" (>= 0). It is ignored for text.
 COMPANY_FIELDS = {
@@ -245,7 +246,7 @@ def _check_field_value(entry, rule, title: str) -> None:
     """Check that one field holds text or a number as its rule demands."""
     kind, minimum = rule
     value = entry.value.value
-    is_number = type(value) in (int, float)  # bool is not a number here
+    is_number = type(value) in (int, float, Decimal)  # bool is not a number here
 
     if kind == "text" and not isinstance(value, str):
         _error(entry.value, f"{title}: Field '{entry.name}' must be text.")
@@ -599,7 +600,7 @@ def _number(expression):
     Handles number literals, unary minus, and ``+ - * /`` between constants.
     Anything that depends on a variable gives None (checked at run time).
     """
-    if isinstance(expression, Literal) and type(expression.value) in (int, float):
+    if isinstance(expression, Literal) and type(expression.value) in (int, float, Decimal):
         return expression.value
     if isinstance(expression, UnaryExpr) and expression.operator == "-":
         value = _number(expression.operand)
@@ -615,7 +616,7 @@ def _number(expression):
         if expression.operator == "*":
             return left * right
         if expression.operator == "/" and right != 0:
-            return left / right
+            return Decimal(left) / Decimal(right)
     return None
 
 

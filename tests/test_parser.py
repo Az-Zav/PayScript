@@ -1,5 +1,7 @@
 """Parser: one test per grammar construct, plus syntax errors."""
 
+from decimal import Decimal
+
 import pytest
 
 from payscript import ast_nodes as ast
@@ -58,9 +60,9 @@ def test_tax_table_all_bracket_kinds_and_rates():
         "BELOW", "RANGE", "ABOVE", "ABOVE"]
     _, rng, above, fixed = table.rows
     assert (rng.bracket.lower.value, rng.bracket.upper.value) == (100, 200)
-    assert rng.rate.fraction.value == pytest.approx(0.15)
+    assert rng.rate.fraction.value == Decimal("0.15")
     assert above.rate.fixed_amount.value == 50
-    assert above.rate.fraction.value == pytest.approx(0.20)
+    assert above.rate.fraction.value == Decimal("0.20")
     assert fixed.rate.fixed_amount.value == 7 and fixed.rate.fraction is None
 
 
@@ -146,7 +148,7 @@ def test_nested_blocks():
 def test_literals():
     assert first_expr("5").value == 5
     assert first_expr("1.5").value == 1.5
-    assert first_expr("10%").value == pytest.approx(0.1)
+    assert first_expr("10%").value == Decimal("0.1")
     assert first_expr('"hi"').value == "hi"
     assert first_expr("TRUE").value is True
     assert first_expr("FALSE").value is False

@@ -26,6 +26,7 @@ Note:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 
 # --- 1. Base classes -------------------------------------------------------
@@ -77,7 +78,7 @@ class Literal(Expr):
         value: The number, text (without quotes), or boolean.
     """
 
-    value: int | float | str | bool
+    value: int | Decimal | str | bool
 
 
 @dataclass(frozen=True, kw_only=True)

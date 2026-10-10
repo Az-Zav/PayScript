@@ -80,7 +80,7 @@ SYMBOLS = {
 # Line and col are what make errors like "Line 4, col 7" possible.
 #
 # Value rules (agree on these): 20% is stored as 0.20, 500 is an int,
-# 1.25 is a float.
+# 1.25 is a Decimal (exact, no binary rounding).
 @dataclass
 class Token:
     type: T

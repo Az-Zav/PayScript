@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from payscript.errors import PayScriptError
 from payscript.tokens import KEYWORDS, SYMBOLS, Token, T
 
@@ -82,11 +84,11 @@ class Lexer:
             while self.peek().isdigit():
                 self.advance()
         text = self.src[start:self.pos]
-        value = float(text) if is_float else int(text)
+        value = Decimal(text) if is_float else int(text)
 
         if self.peek() == "%":
             self.advance()
-            self.add_token(T.PERCENT, value / 100, line, col)
+            self.add_token(T.PERCENT, Decimal(value) / 100, line, col)
         else:
             self.add_token(T.NUMBER, value, line, col)
 

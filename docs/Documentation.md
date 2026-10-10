@@ -112,3 +112,7 @@ KEYWORDS         = COMPANY EMPLOYEE END TAX BELOW ABOVE
 (*   if COMPANY came before the function). Global variables are not   *)
 (*   visible inside a function.                                       *)
 (* Types: text + text joins; text + number is an error; divide by 0 is an error *)
+(* Numbers: whole numbers are ints, fractions are exact decimals      *)
+(*   (0.1 + 0.2 = 0.3). Pay amounts, absences, tardiness, overtime    *)
+(*   and tax are each rounded to centavos (halves up) when computed,  *)
+(*   so payslip rows always add up to Gross and Net.                  *)

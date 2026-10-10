@@ -1,5 +1,7 @@
 """Interpreter: expressions, statements, pay maths, tax, payslips, run-time errors."""
 
+from decimal import Decimal
+
 import pytest
 
 from payscript.errors import PayScriptError
@@ -405,3 +407,46 @@ def test_overtime_row_on_payslip_only_when_non_zero(run):
     text = run(OVERTIME + "PAYSLIP a").payslip("a")
     row = next(l for l in text.splitlines() if l.startswith("Overtime"))
     assert row.split() == ["Overtime", "781.25"]
+
+
+# ---------- exact money (Decimal) ----------
+
+def test_decimal_arithmetic_is_exact(out):
+    assert out("PRINT 0.1 + 0.2 = 0.3") == ["TRUE"]
+
+
+@pytest.mark.parametrize("amount,shown", [
+    ("0.125", "0.13"), ("2.675", "2.68"), ("1.005", "1.01"), ("0.124", "0.12"),
+])
+def test_halves_round_up_when_shown(out, amount, shown):
+    assert out(f"PRINT {amount}") == [shown]
+
+
+def test_pay_amounts_are_rounded_to_centavos_when_added(run):
+    res = run(BASE + 'ADD maria "Split" 10 / 3\nPRINT maria.total_add, maria.gross')
+    assert res.lines == ["3.33 22003.33"]
+
+
+def test_each_payslip_row_is_a_whole_centavo_and_rows_add_up(run):
+    # 7 absences-minutes style odd numbers force sub-centavo intermediate values.
+    src = (COMPANY + 'EMPLOYEE a\n name "A"\n salary 47468\n absences 3\n'
+           " late_minutes 60\n overtime_hours 10\nEND\n"
+           'ADD a "Bonus" 123.45\nPAYSLIP a')
+    rows = {}
+    for line in run(src).payslip("a").splitlines()[1:]:
+        label, amount = line.rsplit(None, 1)
+        rows[label.strip()] = Decimal(amount)
+    shown_sum = (rows["Basic Pay"] - rows["Absences"] - rows["Tardiness"]
+                 + rows["Overtime"] + rows["Bonus"])
+    assert shown_sum == rows["Gross"]
+
+
+def test_input_decimals_are_exact_and_non_numbers_stay_text(run):
+    res = run(BASE + "PRINT INPUT() + INPUT() = 0.3\nPRINT INPUT()", ["0.1", "0.2", "nan"])
+    assert res.lines == ["", "", "TRUE", "", "nan"]
+
+
+def test_tax_is_rounded_to_centavos(run):
+    src = (COMPANY + "TAX\n 0 -> 100 = 0%\n ABOVE 100 = 33.333%\nEND\n"
+           'EMPLOYEE a\n name "A"\n salary 200\nEND\nPRINT a.tax')
+    assert run(src).lines == ["33.33"]  # 33.333% of 100 = 33.333 -> 33.33
