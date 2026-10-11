@@ -111,64 +111,73 @@ Warnings go to standard error too and don't stop the run unless you pass
 | `1` | A language, file or input error |
 | `130` | Interrupted with Ctrl+C |
 
-## Pipeline
+## The language at a glance
 
-`source -> Lexer -> parser -> validator -> interpreter`
+Programs are plain text. Keywords are UPPERCASE, names are lowercase, and `//`
+starts a comment.
 
-- `payscript/lexer.py`, `tokens.py` — tokens with line/column
-- `payscript/parser.py`, `ast_nodes.py` — syntax tree
-- `payscript/validator.py` — semantic checks (errors and warnings)
-- `payscript/interpreter.py` — runs the program, writes payslips
-- `payscript/constants.py` — rules shared by the stages (reserved names and
-  labels, COMPANY/EMPLOYEE field tables, pay kinds)
-- `payscript/main.py` — command-line interface
-- `payscript/errors.py` — `PayScriptError` (message shown as `Line N, col M: ...`)
+- **Declare** the company and its employees with `COMPANY` and `EMPLOYEE` blocks.
+- **Pay commands**: `ADD`, `EXEMPT`, `CONTRIBUTE` and `LESS` apply a labelled
+  amount to an employee, for example `ADD maria "Bonus" 500`.
+- **Computed fields** such as `maria.gross`, `maria.tax` and `maria.net` are
+  calculated for you.
+- **Tax tables** map income brackets to rates with a `TAX` block.
+- **Logic**: `IF` / `ELSE IF` / `ELSE`, `WHILE`, `FOR EACH`, arrays,
+  `FUNCTION` / `RETURN`, and `INPUT()` for values typed at run time.
+- **Output** with `PRINT` and `PAYSLIP`.
 
-## How money works
+A taste of it, with a tax table and a condition:
 
-- Whole numbers are ints; fractions (`1.25`, `20%`) are exact decimals, so
-  `0.1 + 0.2 = 0.3`.
-- Every payslip amount (absences, tardiness, overtime, tax, and each
-  `ADD`/`EXEMPT`/`CONTRIBUTE`/`LESS`) is rounded to centavos, halves up, when it
-  is computed. The rows on a payslip therefore always add up to Gross and Net.
-- `overtime_hours` is paid automatically at 125% of the hourly rate and shown
-  as an `Overtime` row; do not `ADD` overtime by hand.
+```
+TAX
+    BELOW 20833       = 0%
+    20833 -> 33333    = 15%
+    ABOVE 33333       = 1875 + 20%
+END
 
-## Project layout
+EMPLOYEE john
+    name "John Garcia"
+    salary 28000
+END
 
-- `samples/valid/`, `samples/invalid/` — example programs with expectations in `//` comments
-- `tests/` — automated tests (pytest)
-- `payslips/` — generated output (ignored by Git)
+IF john.salary < 20000 THEN
+    CONTRIBUTE john "SSS" 900
+ELSE
+    CONTRIBUTE john "SSS" 1350
+END
 
-## Setup and usage
+PRINT john.name, john.tax, john.net
+```
 
-Python 3.10 or newer is required. Work inside a virtual environment so the
-project's dependencies stay separate from your system Python. From this folder
-(the one containing `pyproject.toml`):
+The formal grammar and every validator rule are in the
+[language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/Documentation.md).
+
+## Documentation
+
+- [Language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/Documentation.md): grammar and validator rules
+- [How the pipeline works](https://github.com/Az-Zav/PayScript/blob/main/docs/pipeline_guide.md): lexer, parser, validator and interpreter
+- [AST contract](https://github.com/Az-Zav/PayScript/blob/main/docs/ast_contract.md): the syntax-tree interface between stages
+- [Sample programs](https://github.com/Az-Zav/PayScript/tree/main/samples): valid and invalid examples
+
+## Contributing
 
 ```console
+git clone https://github.com/Az-Zav/PayScript.git
+cd PayScript
 python -m venv .venv
-.venv\Scripts\activate            # Windows   (macOS/Linux: source .venv/bin/activate)
-python -m pip install -e ".[dev]"   # the payscript command, pytest and ruff
-payscript run samples/valid/02_attendance_input.ps
+.venv\Scripts\activate              # macOS/Linux: source .venv/bin/activate
+python -m pip install -e ".[dev]"   # editable install + pytest and ruff
+python -m pytest                    # run the tests
+python -m ruff check .              # lint
 ```
 
-Options for `run`:
+The same lint and test checks run on every push through GitHub Actions.
 
-- `--out DIR` — write payslips to `DIR` instead of `payslips/`
-- `--strict` — treat validator warnings as errors
+## Authors
 
-`payscript tokens <file.ps>` prints the token stream for debugging. The exit
-code is 0 on success and 1 on any language, file or input error.
+Victor Jazz Condicion, Rhian Jannah Lacar, EJ Bagayan, Jahzara Samantha San Pablo
+and Vinea Lei De Leon.
 
-## Testing
+## License
 
-```console
-python -m pytest                       # lexer, parser, validator, interpreter, CLI, samples
-python -m pytest -k 02_attendance      # one sample by name
-python -m ruff check .                 # lint (unused imports, undefined names)
-python scripts/bench.py                # pipeline timing
-```
-
-The lint and test checks run on every push through
-[.github/workflows/tests.yml](.github/workflows/tests.yml).
+[MIT](https://github.com/Az-Zav/PayScript/blob/main/LICENSE)
