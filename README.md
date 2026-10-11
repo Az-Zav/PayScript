@@ -1,8 +1,22 @@
 # PayScript
 
-PayScript is a small domain-specific language for generating payslips. A
-program declares a company, employees and (optionally) a tax table, applies
-pay commands, and writes one plain-text payslip per employee.
+[![tests](https://github.com/Az-Zav/PayScript/actions/workflows/tests.yml/badge.svg)](https://github.com/Az-Zav/PayScript/actions/workflows/tests.yml)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
+A small language for describing payroll and turning it into payslips.
+
+## What is PayScript?
+
+PayScript is a domain-specific language for payroll. You write a short
+program that says who the employees are, what they earn, and what gets added
+or deducted. PayScript checks the program, does the arithmetic, and writes one
+plain-text payslip per employee.
+
+Amounts are exact decimals rounded to centavos, so the rows on a payslip
+always add up to the gross and net totals.
+
+## What it looks like
 
 ```
 COMPANY
@@ -22,8 +36,40 @@ PRINT maria.name, maria.gross, maria.net
 PAYSLIP maria
 ```
 
-The full grammar and validator rules are in [docs/Documentation.md](docs/Documentation.md);
-the AST interface is in [docs/ast_contract.md](docs/ast_contract.md).
+Running it prints:
+
+```
+Maria Santos 20500.00 19600.00
+```
+
+and writes `payslips/maria.txt`:
+
+```
+Maria Santos
+Basic Pay            22000.00
+Absences              2000.00
+Bonus                  500.00
+SSS                    900.00
+Withholding Tax          0.00
+Gross                20500.00
+Net Pay              19600.00
+```
+
+## Install
+
+You need Python 3.10 or newer and Git.
+
+```console
+pip install git+https://github.com/Az-Zav/PayScript.git
+payscript --version
+```
+
+If `payscript` isn't found afterwards, try `python -m pip install ...`, or use
+[pipx](https://pipx.pypa.io), which puts command-line tools on your PATH for you:
+
+```console
+pipx install git+https://github.com/Az-Zav/PayScript.git
+```
 
 ## Pipeline
 
