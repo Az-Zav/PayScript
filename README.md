@@ -149,15 +149,25 @@ END
 PRINT john.name, john.tax, john.net
 ```
 
-The formal grammar and every validator rule are in the
+To learn the language step by step, read the
+[language guide](https://github.com/Az-Zav/PayScript/blob/main/docs/language-guide.md).
+The formal grammar and every rule are in the
 [language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/reference.md).
 
 ## Documentation
 
-- [Language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/reference.md): grammar and validator rules
-- [How the pipeline works](https://github.com/Az-Zav/PayScript/blob/main/docs/pipeline_guide.md): lexer, parser, validator and interpreter
-- [AST contract](https://github.com/Az-Zav/PayScript/blob/main/docs/ast_contract.md): the syntax-tree interface between stages
+**Using PayScript**
+
+- [Language guide](https://github.com/Az-Zav/PayScript/blob/main/docs/language-guide.md): a tutorial, from a first payslip to tax tables and functions
+- [Language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/reference.md): grammar and rules
 - [Sample programs](https://github.com/Az-Zav/PayScript/tree/main/samples): valid and invalid examples
+
+**Working on PayScript**
+
+- [Contributing](https://github.com/Az-Zav/PayScript/blob/main/docs/contributing.md): setup, test layout and workflow
+- [Architecture](https://github.com/Az-Zav/PayScript/blob/main/docs/architecture.md): lexer, parser, validator and interpreter, file by file
+- [AST contract](https://github.com/Az-Zav/PayScript/blob/main/docs/ast_contract.md): the syntax-tree interface between stages
+- [How the command works](https://github.com/Az-Zav/PayScript/blob/main/docs/how-the-command-works.md): how pip creates `payscript` and how it ships
 
 ## Contributing
 

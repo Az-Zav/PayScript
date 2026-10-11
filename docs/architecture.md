@@ -305,22 +305,15 @@ function.
 #### How pay is computed
 
 `Employee` derives everything from the input fields and the items recorded by
-the pay commands. All amounts are rounded to centavos, halves up, when they
-are computed.
+the pay commands. There is one method per computed field, each registered in
+the `Employee.COMPUTED` table, and none of them cache: every read recalculates
+from the current fields and items. Amounts are rounded with `money()`
+(centavos, halves up) at the point they are computed.
 
-| Value | Definition |
-|---|---|
-| `daily_rate` | `salary / working_days` |
-| `hourly_rate` | `daily_rate / hours_per_day` |
-| `minute_rate` | `hourly_rate / 60` |
-| `absence_deduction` | `absences * daily_rate` |
-| `tardiness_deduction` | `late_minutes * minute_rate` |
-| `overtime_pay` | `overtime_hours * hourly_rate * 1.25` |
-| `basic_pay` | `salary - absence_deduction - tardiness_deduction` |
-| `taxable` | `max(0, basic_pay + overtime_pay + total_add - total_contribute)` |
-| `tax` | looked up from the tax table using `taxable` |
-| `gross` | `basic_pay + overtime_pay + total_add + total_exempt` |
-| `net` | `gross - total_contribute - tax - total_less` |
+The formulas themselves are listed in
+[section 14 of the language guide](language-guide.md#14-how-pay-is-calculated),
+so there is a single copy to keep up to date. The only constant that lives in
+the interpreter is `OVERTIME_MULTIPLIER` (see Limits below).
 
 #### Tax lookup
 
@@ -424,8 +417,9 @@ goes.
 
 ### Change the payroll formula
 
-All of it is in `Employee` in `interpreter.py`. Update the table in
-section 5, `reference.md`, and the interpreter tests together.
+All of it is in `Employee` in `interpreter.py`. Update the formulas in
+[language-guide.md](language-guide.md#14-how-pay-is-calculated) (section 14),
+any affected rule in `reference.md`, and the interpreter tests together.
 
 ## 8. Find it fast
 
