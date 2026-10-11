@@ -1,5 +1,6 @@
 """End to end: every sample file through the real CLI, plus the CLI options."""
 
+import os
 import subprocess
 import sys
 
@@ -23,13 +24,21 @@ def test_every_invalid_sample_declares_the_error_it_expects():
         assert exp["error"], f"{path.name} has no // expect-error line"
 
 
+def payscript(*args, cwd, stdin=""):
+    """Run `python -m payscript.main <args>` as a real process."""
+    env = dict(os.environ, PYTHONPATH=str(ROOT), PYTHONIOENCODING="utf-8")
+    return subprocess.run(
+        [sys.executable, "-m", "payscript.main", *args],
+        input=stdin, capture_output=True, text=True, encoding="utf-8",
+        cwd=cwd, env=env, timeout=30,
+    )
+
+
 def cli(tmp_path, source, *args, stdin=""):
+    """Write `source` to a file in tmp_path and `payscript run` it."""
     program = tmp_path / "prog.ps"
     program.write_text(source, encoding="utf-8")
-    return subprocess.run(
-        [sys.executable, "-m", "payscript.main", "run", str(program), *args],
-        input=stdin, capture_output=True, text=True, cwd=tmp_path,
-    )
+    return payscript("run", str(program), *args, cwd=tmp_path, stdin=stdin)
 
 
 def test_exit_code_zero_and_output_on_success(tmp_path):
@@ -74,9 +83,7 @@ def test_strict_turns_warnings_into_a_failure(tmp_path):
 
 
 def test_missing_file(tmp_path):
-    result = subprocess.run(
-        [sys.executable, "-m", "payscript.main", "run", str(tmp_path / "nope.ps")],
-        capture_output=True, text=True)
+    result = payscript("run", str(tmp_path / "nope.ps"), cwd=tmp_path)
     assert result.returncode == 1
     assert "file not found" in result.stderr
 
@@ -95,9 +102,7 @@ def test_missing_input_fails_cleanly(tmp_path):
 def test_tokens_command_lists_tokens(tmp_path):
     program = tmp_path / "t.ps"
     program.write_text("SET x TO 1", encoding="utf-8")
-    result = subprocess.run(
-        [sys.executable, "-m", "payscript.main", "tokens", str(program)],
-        capture_output=True, text=True, cwd=ROOT)
+    result = payscript("tokens", str(program), cwd=tmp_path)
     assert result.returncode == 0
     assert result.stdout.split()[0] == "SET"
 
