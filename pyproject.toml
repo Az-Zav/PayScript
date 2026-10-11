@@ -8,7 +8,18 @@ dynamic = ["version"]
 description = "A domain-specific language for payroll"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = { text = "MIT" }
+authors = [
+    { name = "Victor Jazz Condicion", email = "qvjcondicion@tip.edu.ph" },
+    { name = "Rhian Jannah Lacar", email = "qrjlacar@tip.edu.ph" },
+    { name = "EJ Bagayan", email = "qebagayan@tip.edu.ph" },
+    { name = "Jahzara Samantha San Pablo", email = "qjssanpablo@tip.edu.ph" },
+    { name = "Vinea Lei De Leon", email = "qvldeleon25@tip.edu.ph" },
+]
+
+[project.urls]
+Homepage = "https://github.com/Az-Zav/PayScript"
+Issues = "https://github.com/Az-Zav/PayScript/issues"
 
 [project.scripts]
 payscript = "payscript.main:main"
