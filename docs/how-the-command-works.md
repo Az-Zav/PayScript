@@ -62,7 +62,7 @@ you type:   payscript run payroll.ps --out out
 Things to notice:
 - **"On PATH" is the real requirement.** The command works only where the folder holding `payscript.exe` is on `PATH`. A virtualenv's `activate` script does that for you.
 - `if __name__ == "__main__": raise SystemExit(main())` at the bottom of `main.py` is a *second* way in: `python payscript/main.py run file.ps`. It's useful, but it's not what the `payscript` command uses.
-- **Gap I noticed:** there's no `payscript/__main__.py`, so `python -m payscript run file.ps` will **not** work. It's a 3-line file to add (`from payscript.main import main; raise SystemExit(main())`) and is a nice fallback when `Scripts` isn't on PATH.
+- **There is no `payscript/__main__.py`**, so `python -m payscript run file.ps` does not work. If `Scripts` isn't on your `PATH`, use `python -m payscript.main run file.ps` instead, which runs the same code.
 
 ### Why does it work from any folder in your setup?
 
@@ -132,10 +132,9 @@ For a school/portfolio language, the wheel is the right answer. Reach for PyInst
 ### What you'd need to do before shipping
 
 1. **Check `README.md` and `LICENSE` are what you want public**, since both are referenced by `pyproject.toml`.
-2. **Add `payscript/__main__.py`** (so `python -m payscript` works).
-3. **Bump `version`** in *both* `pyproject.toml` and `payscript/__init__.py` (they're duplicated today; consider making one the source of truth).
-4. **Build in a clean environment and test it** (`python -m venv test_env`, install the wheel, run a sample from a different folder). This catches "works only because the repo is next to it" bugs.
-5. **Add `authors`, `classifiers`, `urls`** to `pyproject.toml` if publishing publicly.
+2. **Bump the version** by editing `__version__` in `payscript/__init__.py`. It is the single source of truth; `pyproject.toml` reads it from there.
+3. **Build in a clean environment and test it** (`python -m venv test_env`, install the wheel, run a sample from a different folder). This catches "works only because the repo is next to it" bugs.
+4. **Metadata** (`authors`, `urls`, license) is already in `pyproject.toml`. Add `classifiers` if you publish to PyPI.
 
 ### Quick sanity check you can run yourself
 
