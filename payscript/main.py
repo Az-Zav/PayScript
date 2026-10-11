@@ -2,6 +2,7 @@
 
 Usage:  payscript run <file.ps> [--out DIR] [--strict]
         payscript tokens <file.ps>     (debug: print the token stream)
+        payscript --version
 
 Pipeline:  source -> Lexer -> parse -> validate -> interpret
 """
@@ -10,6 +11,7 @@ import argparse
 import sys
 import warnings
 from pathlib import Path
+from payscript import __version__
 
 from payscript.errors import PayScriptError
 from payscript.interpreter import interpret
@@ -58,6 +60,8 @@ def run_source(source, payslip_dir="payslips", strict=False):
 def main() -> int:
     """Run the PayScript command-line interface."""
     arg_parser = argparse.ArgumentParser(prog="payscript")
+    arg_parser.add_argument("--version", action="version",
+                            version=f"%(prog)s {__version__}")
     subparsers = arg_parser.add_subparsers(dest="command", required=True)
     run_parser = subparsers.add_parser("run", help="run a PayScript source file")
     run_parser.add_argument("filename", help="path to a .ps source file")

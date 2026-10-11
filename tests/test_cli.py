@@ -9,6 +9,8 @@ import pytest
 import run_samples
 from conftest import BASE, ROOT
 
+from payscript import __version__
+
 SAMPLES = sorted((ROOT / "samples" / "valid").glob("*.ps")) + \
     sorted((ROOT / "samples" / "invalid").glob("*.ps"))
 
@@ -113,3 +115,8 @@ def test_deeply_nested_program_gives_a_clean_error_not_a_traceback(tmp_path):
     assert result.returncode == 1
     assert "nested too deeply" in result.stderr
     assert "Traceback" not in result.stderr
+
+def test_version_flag_prints_the_package_version(tmp_path):
+    result = payscript("--version", cwd=tmp_path)
+    assert result.returncode == 0
+    assert result.stdout.strip() == f"payscript {__version__}"
