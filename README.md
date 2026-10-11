@@ -150,11 +150,11 @@ PRINT john.name, john.tax, john.net
 ```
 
 The formal grammar and every validator rule are in the
-[language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/Documentation.md).
+[language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/reference.md).
 
 ## Documentation
 
-- [Language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/Documentation.md): grammar and validator rules
+- [Language reference](https://github.com/Az-Zav/PayScript/blob/main/docs/reference.md): grammar and validator rules
 - [How the pipeline works](https://github.com/Az-Zav/PayScript/blob/main/docs/pipeline_guide.md): lexer, parser, validator and interpreter
 - [AST contract](https://github.com/Az-Zav/PayScript/blob/main/docs/ast_contract.md): the syntax-tree interface between stages
 - [Sample programs](https://github.com/Az-Zav/PayScript/tree/main/samples): valid and invalid examples
