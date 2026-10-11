@@ -16,6 +16,10 @@ python -m pytest                    # everything should pass
 `-e` (editable) links the installed `payscript` command to your clone, so
 edits take effect immediately without reinstalling.
 
+If `payscript` behaves like old code, you may have a second, non-editable copy
+installed. Run `where.exe payscript` (macOS/Linux: `which -a payscript`) to find
+every copy, then `python -m pip uninstall payscript` in the one you don't want.
+
 ## Project layout
 
 ```
