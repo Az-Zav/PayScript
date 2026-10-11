@@ -70,6 +70,15 @@ If `payscript` isn't found afterwards, try `python -m pip install ...`, or use
 ```console
 pipx install git+https://github.com/Az-Zav/PayScript.git
 ```
+### Update or uninstall
+
+```console
+pip install --upgrade git+https://github.com/Az-Zav/PayScript.git   # update
+pip uninstall payscript                                              # remove
+```
+
+If you installed with pipx, use `pipx upgrade payscript` and `pipx uninstall payscript`.
+
 ## Quick start
 
 1. Save the example above as `maria.ps`.
