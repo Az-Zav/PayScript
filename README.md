@@ -79,10 +79,10 @@ code is 0 on success and 1 on any language, file or input error.
 
 ```console
 python -m pytest                       # lexer, parser, validator, interpreter, CLI, samples
+python -m pytest -k 02_attendance      # one sample by name
 python -m ruff check .                 # lint (unused imports, undefined names)
-python run_samples.py                  # every sample, valid and invalid
-python bench.py                        # pipeline timing
+python scripts/bench.py                # pipeline timing
 ```
 
-The same three checks run on every push through
+The lint and test checks run on every push through
 [.github/workflows/tests.yml](.github/workflows/tests.yml).

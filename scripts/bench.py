@@ -1,10 +1,10 @@
 """PayScript benchmark.
 
-Run from the folder that CONTAINS the `payscript` package folder:
+Run from the repository root, with PayScript installed (pip install -e .):
 
-    python bench.py                      # synthetic scaling test (1-1000 employees)
-    python bench.py samples\\*.ps         # also time your own .ps files
-    python bench.py --reps 50            # more repetitions = steadier numbers
+    python scripts/bench.py                    # synthetic scaling test (1-1000 employees)
+    python scripts/bench.py samples/valid/*.ps # also time your own .ps files
+    python scripts/bench.py --reps 50          # more repetitions = steadier numbers
 
 Times are medians in milliseconds. Payslips go to a temp folder, not yours.
 """
