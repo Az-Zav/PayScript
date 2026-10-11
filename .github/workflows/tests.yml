@@ -21,5 +21,3 @@ jobs:
         run: python -m ruff check .
       - name: Tests
         run: python -m pytest -q
-      - name: Samples
-        run: python run_samples.py

@@ -1,8 +1,9 @@
-"""Run every sample program and report PASS or FAIL.
+"""Helpers that check a sample program against its // expectations.
 
-Usage:
-    python run_samples.py              run all samples
-    python run_samples.py 02 bad_char  run only samples whose name contains a word
+Used by tests/test_cli.py. To run samples, use pytest, for example:
+
+    pytest tests/test_cli.py            all samples and CLI tests
+    pytest -k 02_attendance             one sample, by name
 
 Each sample states what it expects in ordinary // comments:
 
@@ -26,7 +27,6 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SAMPLE_FOLDERS = ("valid", "invalid")
 
 
 def normalize(text):
@@ -98,7 +98,7 @@ def check(exp, returncode, stdout, stderr, payslip_dir):
 
 
 def run_sample(path):
-    """Run one sample in a scratch folder. Returns (problems, exp)."""
+    """Run one sample in a scratch folder. Returns a list of problems."""
     exp = parse_expectations(path.read_text(encoding="utf-8"))
     stdin = "".join(line + "\n" for line in exp["input"])
     with tempfile.TemporaryDirectory() as scratch:
@@ -111,31 +111,3 @@ def run_sample(path):
         problems = check(exp, result.returncode, result.stdout, result.stderr,
                          Path(scratch) / "payslips")
     return problems
-
-
-def main(argv=None):
-    words = (argv if argv is not None else sys.argv[1:])
-    passed = failed = 0
-    for folder in SAMPLE_FOLDERS:
-        for path in sorted((ROOT / "samples" / folder).glob("*.ps")):
-            if words and not any(w in path.name for w in words):
-                continue
-            label = f"{folder}/{path.name}"
-            try:
-                problems = run_sample(path)
-            except subprocess.TimeoutExpired:
-                problems = ["timed out after 30 seconds"]
-            if problems:
-                failed += 1
-                print(f"FAIL  {label}")
-                for problem in problems:
-                    print(f"      {problem}")
-            else:
-                passed += 1
-                print(f"PASS  {label}")
-    print(f"\n{passed} passed, {failed} failed")
-    return 1 if failed else 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
