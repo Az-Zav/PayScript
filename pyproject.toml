@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "payscript"
-version = "0.1.0"
-description = "A domain-specific language for generating payslips"
+dynamic = ["version"]
+description = "A domain-specific language for payroll"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -15,6 +15,9 @@ payscript = "payscript.main:main"
 
 [tool.setuptools]
 packages = ["payscript"]
+
+[tool.setuptools.dynamic]
+version = {attr = "payscript.__version__"}
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.5"]
