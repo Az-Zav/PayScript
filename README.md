@@ -70,6 +70,46 @@ If `payscript` isn't found afterwards, try `python -m pip install ...`, or use
 ```console
 pipx install git+https://github.com/Az-Zav/PayScript.git
 ```
+## Quick start
+
+1. Save the example above as `maria.ps`.
+2. Run it:
+
+   ```console
+   payscript run maria.ps
+   ```
+
+3. Open `payslips/maria.txt` to see the payslip.
+
+More examples are in [`samples/valid`](https://github.com/Az-Zav/PayScript/tree/main/samples/valid).
+Programs that ask for input use `INPUT()`, which reads from the keyboard, so you
+can also pipe values in: `echo 500 | payscript run samples/valid/02_attendance_input.ps`.
+
+## Command-line reference
+
+| Command | What it does |
+|---|---|
+| `payscript run FILE` | Check a program, run it, and write one payslip per employee |
+| `payscript tokens FILE` | Print the token stream (for debugging the language itself) |
+| `payscript --version` | Print the installed version |
+| `payscript --help` | Show usage (also works after `run` and `tokens`) |
+
+Options for `run`:
+
+| Option | Meaning |
+|---|---|
+| `--out DIR` | Write payslips to `DIR` instead of `payslips/` |
+| `--strict` | Treat validator warnings as errors |
+
+Errors are printed to standard error in the form `Line 9, col 7: message`.
+Warnings go to standard error too and don't stop the run unless you pass
+`--strict`.
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | A language, file or input error |
+| `130` | Interrupted with Ctrl+C |
 
 ## Pipeline
 
